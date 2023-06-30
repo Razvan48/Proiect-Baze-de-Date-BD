@@ -1,0 +1,752 @@
+/*
+DROP SEQUENCE SECVENTA_LOCATIE;
+DROP SEQUENCE SECVENTA_HOTEL;
+DROP SEQUENCE SECVENTA_CAMERA;
+DROP SEQUENCE SECVENTA_FACILITATE;
+DROP SEQUENCE SECVENTA_CLIENT;
+DROP SEQUENCE SECVENTA_ZONA_DE_PARCARE;
+DROP SEQUENCE SECVENTA_LOC_DE_PARCARE;
+DROP SEQUENCE SECVENTA_FURNIZOR;
+DROP SEQUENCE SECVENTA_CONTRACT;
+DROP SEQUENCE SECVENTA_FEL_DE_MANCARE;
+DROP SEQUENCE SECVENTA_RESTAURANT;
+DROP SEQUENCE SECVENTA_ANGAJAT;
+
+DROP TABLE BUCATAR;
+DROP TABLE CHELNER;
+DROP TABLE ADMINISTRATOR;
+DROP TABLE RECEPTIONIST;
+DROP TABLE PAZNIC;
+DROP TABLE ANGAJAT;
+DROP TABLE FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE;
+DROP TABLE RESTAURANT_serveste_FEL_DE_MANCARE;
+DROP TABLE RESTAURANT;
+DROP TABLE FEL_DE_MANCARE;
+DROP TABLE CONTRACT;
+DROP TABLE FURNIZOR;
+DROP TABLE LOC_DE_PARCARE;
+DROP TABLE ZONA_DE_PARCARE;
+DROP TABLE CLIENT_rezerva_CAMERA;
+DROP TABLE CAMERA_prezinta_FACILITATE;
+DROP TABLE CLIENT;
+DROP TABLE FACILITATE;
+DROP TABLE CAMERA;
+DROP TABLE HOTEL;
+DROP TABLE LOCATIE;
+*/
+
+CREATE SEQUENCE SECVENTA_LOCATIE
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_HOTEL
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_CAMERA
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_FACILITATE
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_CLIENT
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_ZONA_DE_PARCARE
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_LOC_DE_PARCARE
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_FURNIZOR
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_CONTRACT
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_FEL_DE_MANCARE
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_RESTAURANT
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE SEQUENCE SECVENTA_ANGAJAT
+INCREMENT BY 1
+START WITH 1
+MAXVALUE 9999999999
+NOCYCLE;
+
+CREATE TABLE LOCATIE
+(
+cod_locatie NUMBER(10) PRIMARY KEY,
+    adresa VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE HOTEL
+(
+    cod_hotel NUMBER(10) PRIMARY KEY,
+    denumire VARCHAR2(50) NOT NULL,
+    numar_stele NUMBER(1),
+    an_infiintare NUMBER(4),
+    cod_locatie NUMBER(10) REFERENCES LOCATIE(cod_locatie) NOT NULL
+);
+
+CREATE TABLE CAMERA
+(
+    cod_camera NUMBER(10) NOT NULL,
+    cod_hotel NUMBER(10) REFERENCES HOTEL(cod_hotel) NOT NULL,
+    PRIMARY KEY (cod_camera, cod_hotel),
+    numar NUMBER(10) NOT NULL CHECK(numar > 0),
+    etaj NUMBER(3) DEFAULT 0 CHECK(etaj >= 0) NOT NULL
+);
+
+CREATE TABLE FACILITATE
+(
+    cod_facilitate NUMBER(10) PRIMARY KEY,
+    denumire VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE CLIENT
+(
+    cod_client NUMBER(10) PRIMARY KEY,
+    nume VARCHAR2(50) NOT NULL,
+    prenume VARCHAR2(50) NOT NULL,
+    CNP VARCHAR2(13),
+    numar_telefon VARCHAR2(50) NOT NULL,
+    adresa_mail VARCHAR2(50)
+);
+
+CREATE TABLE CAMERA_prezinta_FACILITATE
+(
+    cod_camera NUMBER(10) NOT NULL,
+    cod_hotel NUMBER(10) NOT NULL,
+    cod_facilitate NUMBER(10) REFERENCES FACILITATE(cod_facilitate) NOT NULL,
+    FOREIGN KEY (cod_camera, cod_hotel) REFERENCES CAMERA(cod_camera, cod_hotel),
+    PRIMARY KEY(cod_camera, cod_hotel, cod_facilitate)
+);
+
+CREATE TABLE CLIENT_rezerva_CAMERA
+(
+    cod_client NUMBER(10) REFERENCES CLIENT(cod_client) NOT NULL,
+    cod_camera NUMBER(10) NOT NULL,
+    cod_hotel NUMBER(10) NOT NULL,
+    data_inceput DATE DEFAULT SYSDATE NOT NULL,
+    data_sfarsit DATE NOT NULL,
+    FOREIGN KEY (cod_camera, cod_hotel) REFERENCES CAMERA(cod_camera, cod_hotel),
+    CONSTRAINT check_date_client_rezerva_camera CHECK(data_inceput <= data_sfarsit),
+    PRIMARY KEY (cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+);
+
+CREATE TABLE ZONA_DE_PARCARE
+(
+    cod_zona_de_parcare NUMBER(10) PRIMARY KEY,
+    cod_hotel NUMBER(10) REFERENCES HOTEL(cod_hotel) NOT NULL,
+    cod_locatie NUMBER(10) REFERENCES LOCATIE(cod_locatie) NOT NULL
+);
+
+CREATE TABLE LOC_DE_PARCARE
+(
+    cod_loc_de_parcare NUMBER(10) NOT NULL,
+    cod_zona_de_parcare NUMBER(10) NOT NULL,
+    PRIMARY KEY (cod_loc_de_parcare, cod_zona_de_parcare),
+    numar NUMBER(10) CHECK(numar > 0) NOT NULL
+);
+
+CREATE TABLE FURNIZOR
+(
+    cod_furnizor NUMBER(10) PRIMARY KEY,
+    nume VARCHAR2(50) NOT NULL
+);
+
+CREATE TABLE CONTRACT
+(
+    cod_contract NUMBER(10) PRIMARY KEY,
+    data_inceput DATE DEFAULT SYSDATE NOT NULL,
+    data_sfarsit DATE NOT NULL,
+    CONSTRAINT check_date_contract CHECK(data_inceput <= data_sfarsit)
+);
+
+CREATE TABLE FEL_DE_MANCARE
+(
+    cod_fel_de_mancare NUMBER(10) PRIMARY KEY,
+    denumire VARCHAR2(50) NOT NULL,
+    pret NUMBER(5) NOT NULL
+);
+
+CREATE TABLE RESTAURANT
+(
+    cod_restaurant NUMBER(10) PRIMARY KEY,
+    cod_hotel NUMBER(10) REFERENCES HOTEL(cod_hotel) NOT NULL,
+    cod_locatie NUMBER(10) REFERENCES LOCATIE(cod_locatie) NOT NULL,
+    denumire VARCHAR2(50) NOT NULL,
+    numar_stele NUMBER(1),
+    an_infiintare NUMBER(4)
+);
+
+CREATE TABLE RESTAURANT_serveste_FEL_DE_MANCARE
+(
+    cod_restaurant NUMBER(10) REFERENCES RESTAURANT(cod_restaurant) NOT NULL,
+    cod_fel_de_mancare NUMBER(10) REFERENCES FEL_DE_MANCARE(cod_fel_de_mancare) NOT NULL,
+    PRIMARY KEY (cod_restaurant, cod_fel_de_mancare)
+);
+
+CREATE TABLE FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE
+(
+    cod_restaurant NUMBER(10) REFERENCES RESTAURANT(cod_restaurant) NOT NULL,
+    cod_furnizor NUMBER(10) REFERENCES FURNIZOR(cod_furnizor) NOT NULL,
+    cod_contract NUMBER(10) REFERENCES CONTRACT(cod_contract) NOT NULL,
+    PRIMARY KEY (cod_restaurant, cod_furnizor, cod_contract)
+);
+
+CREATE TABLE ANGAJAT
+(
+    cod_angajat NUMBER(10) PRIMARY KEY,
+    nume VARCHAR2(50) NOT NULL,
+    prenume VARCHAR2(50) NOT NULL,
+    CNP VARCHAR2(13) NOT NULL,
+    numar_telefon VARCHAR2(50) NOT NULL,
+    adresa_mail VARCHAR2(50),
+    salariu NUMBER(10) NOT NULL
+);
+
+CREATE TABLE PAZNIC
+(
+    cod_angajat NUMBER(10) PRIMARY KEY REFERENCES ANGAJAT(cod_angajat),
+    cod_zona_de_parcare NUMBER(10) REFERENCES ZONA_DE_PARCARE(cod_zona_de_parcare)
+);
+
+CREATE TABLE RECEPTIONIST
+(
+    cod_angajat NUMBER(10) PRIMARY KEY REFERENCES ANGAJAT(cod_angajat),
+    cod_hotel NUMBER(10) REFERENCES HOTEL(cod_hotel)
+);
+
+CREATE TABLE ADMINISTRATOR
+(
+    cod_angajat NUMBER(10) PRIMARY KEY REFERENCES ANGAJAT(cod_angajat),
+    cod_hotel NUMBER(10) REFERENCES HOTEL(cod_hotel)
+);
+
+CREATE TABLE CHELNER
+(
+    cod_angajat NUMBER(10) PRIMARY KEY REFERENCES ANGAJAT(cod_angajat),
+    cod_restaurant NUMBER(10) REFERENCES RESTAURANT(cod_restaurant)
+);
+
+CREATE TABLE BUCATAR
+(
+    cod_angajat NUMBER(10) PRIMARY KEY REFERENCES ANGAJAT(cod_angajat),
+    cod_restaurant NUMBER(10) REFERENCES RESTAURANT(cod_restaurant)
+);
+
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 1');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 2');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 3');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 4');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 5');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 6');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Zona 7');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Centru');
+INSERT INTO LOCATIE(cod_locatie, adresa)
+VALUES(SECVENTA_LOCATIE.NEXTVAL, 'Periferie');
+
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Continental', 3, 1965, 1);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Europa', 4, 1993, 1);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Atena', 3, 1997, 1);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Sofia', 2, 1983, 2);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Mures', 4, 1975, 2);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Banat', 2, 1968, 2);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Transilvania', 3, 1970, 3);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Moldova', NULL, NULL, 3);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Dobrogea', 5, NULL, 9);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Basarabia', 1, 1950, 9);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Bucovina', NULL, NULL, 9);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Transnistria', NULL, NULL, 8);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Venetia', NULL, 1963, 8);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Dunare', 3, NULL, 8);
+INSERT INTO HOTEL(cod_hotel, denumire, numar_stele, an_infiintare, cod_locatie)
+VALUES(SECVENTA_HOTEL.NEXTVAL, 'Carpati', NULL, 1968, 6);
+
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 1, 1);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 1, 2, 1);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 1, 3);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 1, 4, 2);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 1, 5);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 2, 1);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 2, 2, 3);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 2, 3, 0);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 2, 4, 7);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 2, 5);
+INSERT INTO CAMERA(cod_camera, cod_hotel, numar, etaj)
+VALUES(SECVENTA_CAMERA.NEXTVAL, 3, 1, 1);
+
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Camera Standard');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Camera Dubla');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Camera Tripla');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Apartament');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Balcon');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Aer Conditionat');
+INSERT INTO FACILITATE(cod_facilitate, denumire)
+VALUES(SECVENTA_FACILITATE.NEXTVAL, 'Room Service');
+
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Popescu', 'Ion', '1234567890123', '0701234567', 'popescu.ion@mail.ro');
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Ionescu', 'Mircea', '3210987654321', '0798765432', 'mircea_ionescu@mail.com');
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Andrei', 'Ionescu', '0001112223334', '0700111222', 'andreiionescu@mail.ro');
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Mihai', 'Paul', '9998887776665', '0799888777', 'paul.mihai@mail.com');
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Bogdan', 'Mircea', '0000011111222', '0777777777', NULL);
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Georgescu', 'Gheorghe', '0010011111222', '0777377777', 'georgescu_gheorghe@mail.ro');
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Vlad', 'Teodor', '2020202020202', '0755000555', NULL);
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Alexandru', 'Sebastian', '1313131313131', '0744333432', NULL);
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Mihailescu', 'Florin', '1717171717171', '0700000000', NULL);
+INSERT INTO CLIENT(cod_client, nume, prenume, CNP, numar_telefon, adresa_mail)
+VALUES(SECVENTA_CLIENT.NEXTVAL, 'Andreescu', 'Robert', '1919191919191', '0711222333', NULL);
+
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(1, 1, 1);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(1, 1, 6);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(1, 1, 7);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(9, 2, 3);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(9, 2, 5);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(9, 2, 6);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(9, 2, 7);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(10, 2, 4);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(10, 2, 5);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(10, 2, 6);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(8, 2, 2);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(8, 2, 7);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(7, 2, 7);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(7, 2, 6);
+INSERT INTO CAMERA_prezinta_FACILITATE(cod_camera, cod_hotel, cod_facilitate)
+VALUES(7, 2, 1);
+
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(1, 1, 1, TO_DATE('02-09-2023', 'dd-mm-yyyy'), TO_DATE('08-09-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(2, 2, 1, TO_DATE('07-05-2023', 'dd-mm-yyyy'), TO_DATE('13-05-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(3, 3, 1, TO_DATE('26-04-2023', 'dd-mm-yyyy'), TO_DATE('02-05-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(4, 4, 1, TO_DATE('23-03-2023', 'dd-mm-yyyy'), TO_DATE('01-04-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(5, 5, 1, TO_DATE('23-10-2023', 'dd-mm-yyyy'), TO_DATE('01-11-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(5, 7, 2, TO_DATE('07-09-2023', 'dd-mm-yyyy'), TO_DATE('08-09-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(6, 7, 2, TO_DATE('10-03-2023', 'dd-mm-yyyy'), TO_DATE('14-03-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(6, 8, 2, TO_DATE('15-04-2023', 'dd-mm-yyyy'), TO_DATE('15-05-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(9, 9, 2, TO_DATE('17-03-2023', 'dd-mm-yyyy'), TO_DATE('19-05-2023', 'dd-mm-yyyy'));
+INSERT INTO CLIENT_rezerva_CAMERA(cod_client, cod_camera, cod_hotel, data_inceput, data_sfarsit)
+VALUES(9, 9, 2, TO_DATE('01-01-2023', 'dd-mm-yyyy'), TO_DATE('01-02-2023', 'dd-mm-yyyy'));
+
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 1, 1);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 2, 2);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 3, 4);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 1, 1);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 4, 3);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 5, 5);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 6, 5);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 1, 5);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 7, 6);
+INSERT INTO ZONA_DE_PARCARE(cod_zona_de_parcare, cod_hotel, cod_locatie)
+VALUES(SECVENTA_ZONA_DE_PARCARE.NEXTVAL, 8, 6);
+
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 1);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 2);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 3);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 4);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 5);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 1, 6);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 2, 1);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 2, 2);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 2, 3);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 2, 4);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 3, 1);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 3, 2);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 3, 3);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 3, 4);
+INSERT INTO LOC_DE_PARCARE(cod_loc_de_parcare, cod_zona_de_parcare, numar)
+VALUES(SECVENTA_LOC_DE_PARCARE.NEXTVAL, 3, 5);
+
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Brutaria Iberia S.R.L.');
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Macelaria Creta S.R.L.');
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Apa Dorna S.R.L.');
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Brutaria Pavel S.R.L.');
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Macelarie Centru S.R.L.');
+INSERT INTO FURNIZOR(cod_furnizor, nume)
+VALUES(SECVENTA_FURNIZOR.NEXTVAL, 'Apa Carpatica S.R.L.');
+
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('02-09-2023', 'dd-mm-yyyy'), TO_DATE('02-12-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-01-2024', 'dd-mm-yyyy'), TO_DATE('01-01-2025', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-01-2023', 'dd-mm-yyyy'), TO_DATE('01-07-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-01-2023', 'dd-mm-yyyy'), TO_DATE('01-08-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-09-2023', 'dd-mm-yyyy'), TO_DATE('01-01-2024', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-03-2023', 'dd-mm-yyyy'), TO_DATE('01-04-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-04-2023', 'dd-mm-yyyy'), TO_DATE('12-05-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('26-04-2023', 'dd-mm-yyyy'), TO_DATE('02-06-2023', 'dd-mm-yyyy'));
+INSERT INTO CONTRACT(cod_contract, data_inceput, data_sfarsit)
+VALUES(SECVENTA_CONTRACT.NEXTVAL, TO_DATE('01-09-2023', 'dd-mm-yyyy'), TO_DATE('01-01-2025', 'dd-mm-yyyy'));
+
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Ciorba De Legume', 11);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Ciorba De Perisoare', 12);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Ciorba De Pui', 13);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Supa De Legume', 7);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Cartofi Prajiti', 15);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Piure', 12);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Spaghete Carbonara', 22);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Pizza', 27);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Limonada', 7);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Somon', 24);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Snitel De Pui', 14);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Coca Cola', 7);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Pepsi', 7);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Sprite', 7);
+INSERT INTO FEL_DE_MANCARE(cod_fel_de_mancare, denumire, pret)
+VALUES(SECVENTA_FEL_DE_MANCARE.NEXTVAL, 'Fanta', 7);
+
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 1, 5, 'Roma', 3, 1995);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 1, 2, 'Milano', 2, NULL);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 1, 5, 'Savoia', NULL, 2000);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 7, 3, 'Varsovia', 4, 2004);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 1, 5, 'Napoli', NULL, 2008);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 4, 7, 'Madrid', NULL, 1993);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 1, 5, 'Paris', NULL, NULL);
+INSERT INTO RESTAURANT(cod_restaurant, cod_hotel, cod_locatie, denumire, numar_stele, an_infiintare)
+VALUES(SECVENTA_RESTAURANT.NEXTVAL, 2, 1, 'Lisabona', 3, NULL);
+
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 1);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 2);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(2, 3);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(2, 4);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(2, 5);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 5);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 7);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(3, 2);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(3, 5);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(4, 2);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(5, 2);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(6, 3);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(8, 4);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 6);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(8, 6);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(1, 10);
+INSERT INTO RESTAURANT_serveste_FEL_DE_MANCARE(cod_restaurant, cod_fel_de_mancare)
+VALUES(2, 8);
+
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(1, 1, 1);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(1, 1, 2);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(1, 1, 3);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(1, 1, 4);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(2, 1, 5);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(2, 1, 6);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(2, 2, 1);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(2, 2, 6);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 4, 1);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 4, 2);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 5, 3);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 6, 4);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 6, 5);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(3, 6, 6);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(4, 5, 5);
+INSERT INTO FURNIZOR_semneaza_cu_RESTAURANT_mai_multe_CONTRACTE(cod_restaurant, cod_furnizor, cod_contract)
+VALUES(4, 5, 6);
+
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Popescu', 'Florin', '0000000000001', '0700000001', NULL, 4000);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Stoica', 'Marius', '0000000000002', '0700000002', 'stoicamarius@mail.com', 4100);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Stan', 'Ioan', '0000000000003', '0700000003', NULL, 4200);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Vasilescu', 'George', '0000000000004', '0700000004', 'vasilescugeorge@mail.ro', 5000);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Vasilescu', 'Adrian', '0000000000005', '0700000005', NULL, 4700);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Radu', 'Andrei', '0000000000006', '0700000006', NULL, 4500);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Marinescu', 'Cristian', '0000000000007', '0700000007', NULL, 4300);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Marinescu', 'Dumitru', '0000000000008', '0700000008', 'dumitru.marinescu@mail.com', 5300);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Marin', 'Iacob', '0000000000009', '0700000009', NULL, 5200);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Florinescu', 'Cristian', '0000000000010', '0700000010', NULL, 4900);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Popa', 'Ion', '0000000000011', '0700000011', NULL, 4950);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Lupu', 'Daria', '0000000000012', '0700000012', NULL, 5500);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Adamescu', 'Luca', '0000000000013', '0700000013', NULL, 5500);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Ionescu', 'Mirela', '0000000000014', '0700000014', NULL, 5250);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Paraschiv', 'Darius', '0000000000015', '0700000015', 'paraschivdarius@mail.com', 5150);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Serban', 'Stefan', '0000000000016', '0700000016', NULL, 5050);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Victor', 'Camelia', '0000000000017', '0700000017', 'camelia.victor@mail.ro', 4750);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Dan', 'Oana', '0000000000018', '0700000018', 'dan_oana@mail.com', 4850);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Cosmin', 'Ciprian', '0000000000019', '0700000019', 'ciprian.cosmin@mail.ro', 5000);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Popescu', 'Iulian', '0000000000020', '0700000020', NULL, 5000);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Popescu', 'Lucian', '0000000000021', '0700000021', NULL, 5750);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Popescu', 'Raluca', '0000000000022', '0700000022', NULL, 6050);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Tudor', 'Serban', '0000000000023', '0700000023', 'serban.tudor@mail.com', 6350);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Octavian', 'Silviu', '0000000000024', '0700000024', NULL, 7050);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Valentin', 'Catalin', '0000000000025', '0700000025', NULL, 6750);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Emanuel', 'Anca', '0000000000026', '0700000026', 'emanuel.anca@mail.com', 6550);
+INSERT INTO ANGAJAT(cod_angajat, nume, prenume, CNP, numar_telefon, adresa_mail, salariu)
+VALUES(SECVENTA_ANGAJAT.NEXTVAL, 'Sorin', 'Darius', '0000000000027', '0700000027', 'sorin.darius@mail.ro', 6350);
+
+
+INSERT INTO PAZNIC(cod_angajat, cod_zona_de_parcare)
+VALUES(1, 1);
+INSERT INTO PAZNIC(cod_angajat, cod_zona_de_parcare)
+VALUES(2, NULL);
+INSERT INTO PAZNIC(cod_angajat, cod_zona_de_parcare)
+VALUES(3, 2);
+INSERT INTO PAZNIC(cod_angajat, cod_zona_de_parcare)
+VALUES(4, 2);
+INSERT INTO PAZNIC(cod_angajat, cod_zona_de_parcare)
+VALUES(5, 3);
+
+INSERT INTO RECEPTIONIST(cod_angajat, cod_hotel)
+VALUES(6, NULL);
+INSERT INTO RECEPTIONIST(cod_angajat, cod_hotel)
+VALUES(7, 2);
+INSERT INTO RECEPTIONIST(cod_angajat, cod_hotel)
+VALUES(8, 1);
+INSERT INTO RECEPTIONIST(cod_angajat, cod_hotel)
+VALUES(9, NULL);
+INSERT INTO RECEPTIONIST(cod_angajat, cod_hotel)
+VALUES(10, 1);
+
+INSERT INTO CHELNER(cod_angajat, cod_restaurant)
+VALUES(11, 1);
+INSERT INTO CHELNER(cod_angajat, cod_restaurant)
+VALUES(12, 1);
+INSERT INTO CHELNER(cod_angajat, cod_restaurant)
+VALUES(13, 2);
+INSERT INTO CHELNER(cod_angajat, cod_restaurant)
+VALUES(14, 2);
+INSERT INTO CHELNER(cod_angajat, cod_restaurant)
+VALUES(15, 4);
+
+INSERT INTO BUCATAR(cod_angajat, cod_restaurant)
+VALUES(16, 1);
+INSERT INTO BUCATAR(cod_angajat, cod_restaurant)
+VALUES(17, NULL);
+INSERT INTO BUCATAR(cod_angajat, cod_restaurant)
+VALUES(18, 1);
+INSERT INTO BUCATAR(cod_angajat, cod_restaurant)
+VALUES(19, NULL);
+INSERT INTO BUCATAR(cod_angajat, cod_restaurant)
+VALUES(20, 1);
+
+INSERT INTO ADMINISTRATOR(cod_angajat, cod_hotel)
+VALUES(21, 1);
+INSERT INTO ADMINISTRATOR(cod_angajat, cod_hotel)
+VALUES(22, 2);
+INSERT INTO ADMINISTRATOR(cod_angajat, cod_hotel)
+VALUES(23, 3);
+INSERT INTO ADMINISTRATOR(cod_angajat, cod_hotel)
+VALUES(24, 4);
+INSERT INTO ADMINISTRATOR(cod_angajat, cod_hotel)
+VALUES(25, NULL);
+
+/*
+COMMIT;
+*/
+
+
+
+
+

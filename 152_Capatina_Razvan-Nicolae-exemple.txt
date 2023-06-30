@@ -1,0 +1,245 @@
+/*
+Exercitiul 12
+*/
+
+/*
+Sa se afiseze numele hotelurilor care au macar un paznic ce lucreaza la o zona de parcare apartenenta de hotel si care
+se afla in locatia cu adresa 'Zona 1'.
+(subcereri sincronizate in care intervin cel putin 3 tabele)
+*/
+
+SELECT h.denumire FROM HOTEL h WHERE
+(SELECT COUNT(*) FROM PAZNIC p JOIN ZONA_DE_PARCARE z ON (p.cod_zona_de_parcare = z.cod_zona_de_parcare)
+JOIN LOCATIE l ON (z.cod_locatie = l.cod_locatie) WHERE INITCAP(l.adresa) = 'Zona 1' AND z.cod_hotel = h.cod_hotel) >= 1;
+
+
+
+/*
+Sa se determine salariul mediu al paznicilor ce lucreaza intr-o zona de parcare ce apartine hotelului in care
+se afla camera cu id-ul 1.
+(subcereri nesincronizate in clauza FROM)
+*/
+
+SELECT AVG(a1.salariu) FROM (SELECT * FROM ANGAJAT a JOIN PAZNIC p ON (a.cod_angajat = p.cod_angajat) JOIN ZONA_DE_PARCARE z ON
+(p.cod_zona_de_parcare = z.cod_zona_de_parcare) JOIN HOTEL h ON (z.cod_hotel = h.cod_hotel) JOIN camera c ON
+(c.cod_hotel = h.cod_hotel) AND c.cod_camera = 1) a1;
+
+
+
+/*
+Sa se afiseze salariile medii care depasesc 6000 ale tuturor administratorilor cu aceeasi initiala a numelui
+care lucreaza intr-un hotel aflat in locatia cu adresa 'Zona 1'.
+(grupari de date cu subcereri nesincronizate in care intervin cel putin 3 
+tabele, functii grup, filtrare la nivel de grupuri, in cadrul aceleiasi cereri)
+*/
+
+SELECT AVG(subcerere.salariu) FROM (SELECT ang.salariu, ang.nume FROM ANGAJAT ang JOIN ADMINISTRATOR a
+ON (ang.cod_angajat = a.cod_angajat) JOIN HOTEL h ON (a.cod_hotel = h.cod_hotel) JOIN
+LOCATIE l ON (h.cod_locatie = l.cod_locatie) WHERE INITCAP(l.adresa) = 'Zona 1') subcerere
+GROUP BY SUBSTR(subcerere.nume, 1, 1) HAVING AVG(subcerere.salariu) > 6000;
+
+
+
+/*
+Sa se afiseze pentru fiecare client numele, prenumele si adresa sa de mail in ordine
+crescatoare lexicografic dupa nume si descrescatoare lexicografic dupa prenume.
+De asemenea, pentru fiecare adresa de mail se va afisa un text ce mentioneaza daca adresa
+exista sau nu pentru fiecare client, iar in cazul existentei sale va mentiona daca adresa este sau nu neaparat in limba romana.
+(ordonari si utilizarea functiilor NVL si DECODE in cadrul aceleiasi cereri, utilizarea a cel putin unei expresii CASE)
+*/
+
+SELECT nume, prenume, adresa_mail, 
+DECODE(
+    CASE 
+        WHEN adresa_mail LIKE '%.ro' THEN 1
+        WHEN adresa_mail LIKE '%.com' THEN 2
+        ELSE 3
+        END,
+        1, 'Clientul are o adresa de mail in romana.',
+        2, 'Clientul are o adresa de mail care nu este neaparat in romana.',
+        3, NVL(adresa_mail, 'Clientul nu are o adresa de mail.')
+        )
+FROM CLIENT
+ORDER BY NUME, PRENUME DESC;
+
+
+
+/*
+Sa se afiseze salariul, numele si prenumele tuturor angajatilor care au ca nume 'Popescu' si care contin subsecventa
+'uc' in numele lor complet.
+Rezultatele vor fi ordonate descrescator dupa salariul angajatului.
+(utilizarea a cel putin 2 functii pe siruri de caractere)
+*/
+
+SELECT salariu, nume, prenume FROM ANGAJAT
+WHERE INITCAP(nume) = 'Popescu' AND INSTR(CONCAT(nume, prenume), 'uc') != 0
+ORDER BY salariu DESC;
+
+
+
+/*
+Sa se afiseze durata in luni a tuturor sejururilor care incep pe o zi de 7 si care
+rezerva o camera aflata intr-un hotel din locatia cu codul 1.
+(utilizarea a cel putin 2 functii pe date calendaristice, utilizarea a cel putin 1 bloc de cerere, clauza WITH)
+*/
+
+WITH SEJUR AS
+(
+    SELECT r.data_inceput, r.data_sfarsit FROM CLIENT_rezerva_CAMERA r
+    JOIN HOTEL h ON(r.cod_hotel = h.cod_hotel) AND h.cod_locatie = 1
+)
+SELECT MONTHS_BETWEEN(s.data_sfarsit, s.data_inceput) FROM SEJUR s
+WHERE EXTRACT(DAY FROM s.data_inceput) = 7;
+
+
+
+
+
+/*
+Exercitiul 15
+*/
+
+/*
+Operatia Outer-Join pe minimum 4 tabele:
+
+Sa se afiseze codul angajatilor ce ocupa functia de bucatar, denumirea restaurantului in care lucreaza,
+denumirea hotelului de care apartine restaurantul, numarul de stele ale hotelului si adresa hotelului.
+In cazul in care unul dintre aceste campuri nu exista se va afisa 'Nu exista'. In cazul numarului de stele,
+daca acesta nu exista, se va afisa '-1'.
+*/
+
+SELECT b.cod_angajat "Cod Angajat", NVL(r.denumire, 'Nu exista') "Denumire Restaurant", NVL(h.denumire, 'Nu exista') "Denumire Hotel",
+NVL(h.numar_stele, -1) "Numar Stele Hotel", NVL(l.adresa, 'Nu exista') "Adresa Hotel"
+FROM BUCATAR b LEFT JOIN RESTAURANT r ON (b.cod_restaurant = r.cod_restaurant) LEFT JOIN 
+HOTEL h ON (r.cod_hotel = h.cod_hotel) LEFT JOIN LOCATIE l ON (h.cod_locatie = l.cod_locatie);
+
+
+
+/*
+Analiza Top-n:
+
+Sa se afiseze primii 15 cei mai bine platiti angajati, excluzand angajatii ce au cel mai mare salariu dintre toti.
+*/
+
+SELECT *
+FROM
+(
+    SELECT t.*, ROWNUM numar
+    FROM
+    (
+        SELECT *
+        FROM ANGAJAT a
+        WHERE a.salariu < (SELECT MAX(a1.salariu) FROM ANGAJAT a1)
+        ORDER BY a.salariu DESC
+    ) t
+)
+WHERE numar <= 15;
+
+
+
+/*
+Operatia Division:
+
+Sa se afiseze toate felurile de mancare (cod si denumire) care sunt servite doar in restaurantul cu denumirea 'Roma'.
+*/
+
+SELECT sol.cod_fel_de_mancare, sol.denumire FROM FEL_DE_MANCARE sol
+WHERE NOT EXISTS (
+                    SELECT m.cod_fel_de_mancare FROM FEL_DE_MANCARE m
+                    WHERE NOT EXISTS (
+                                        SELECT s.cod_fel_de_mancare FROM RESTAURANT_serveste_FEL_DE_MANCARE s
+                                        JOIN RESTAURANT r ON (s.cod_restaurant = r.cod_restaurant)
+                                        WHERE INITCAP(r.denumire) = 'Roma'
+                                        AND s.cod_fel_de_mancare = m.cod_fel_de_mancare
+                                        )
+                    AND sol.cod_fel_de_mancare = m.cod_fel_de_mancare
+                 );
+
+
+
+
+
+/*
+Exercitiul 13
+*/
+
+/*
+Actualizare:
+*/
+
+
+
+/*
+Sa se mareasca salariul cu 5% tuturor administratorilor care lucreaza intr-un hotel.
+*/
+
+UPDATE ANGAJAT
+SET salariu = salariu * 0.05
+WHERE cod_angajat IN
+(SELECT a.cod_angajat FROM ANGAJAT a JOIN ADMINISTRATOR a1 ON (a.cod_angajat = a1.cod_angajat) WHERE a1.cod_hotel IS NOT NULL);
+
+
+
+/*
+Sa se extinda toate rezervarile din hotelurile din locatia cu denumirea 'Zona 1' cu 30 de zile.
+*/
+
+UPDATE CLIENT_rezerva_CAMERA
+SET data_sfarsit = data_sfarsit + 30
+WHERE cod_hotel IN 
+(SELECT h.cod_hotel FROM HOTEL h JOIN LOCATIE l ON (h.cod_locatie = l.cod_locatie) WHERE INITCAP(l.adresa) = 'Zona 1');
+
+
+
+/*
+Sa se seteze numarul de stele la 2 pentru toate hotelurile ce nu au un numar setat si care se afla in locatia 3.
+*/
+
+UPDATE HOTEL
+SET numar_stele = 2
+WHERE numar_stele IS NULL AND cod_hotel IN
+(SELECT cod_hotel FROM HOTEL WHERE cod_locatie = 3);
+
+
+
+/*
+Suprimare:
+*/
+
+
+
+/*
+Sa se stearga toate rezervarile care au fost realizate pe cea mai apropiata data de 1 iunie 2023, dar dupa 1 iunie 2023.
+*/
+
+DELETE FROM CLIENT_rezerva_CAMERA r
+WHERE r.data_inceput = (SELECT MIN(r1.data_inceput) FROM CLIENT_rezerva_CAMERA r1
+WHERE r1.data_inceput > TO_DATE('01-06-2023', 'DD-MM-YYYY'));
+
+
+
+/*
+Sa se stearga toti receptionistii ce lucreaza intr-un hotel cu mai putin de 3 stele sau care nu lucreaza deloc.
+*/
+
+DELETE FROM RECEPTIONIST r
+WHERE r.cod_angajat IN
+(
+(SELECT r1.cod_angajat FROM RECEPTIONIST r1 WHERE r1.cod_hotel IS NULL)
+UNION
+(SELECT r1.cod_angajat FROM RECEPTIONIST r1 JOIN HOTEL h ON (r1.cod_hotel = h.cod_hotel) AND h.numar_stele < 3)
+);
+
+
+
+/*
+Sa se stearga felurile de mancare ce nu sunt servite in niciun restaurant.
+*/
+
+DELETE FROM FEL_DE_MANCARE m
+WHERE m.cod_fel_de_mancare NOT IN
+(SELECT s.cod_fel_de_mancare FROM RESTAURANT_serveste_FEL_DE_MANCARE s);
+
+
+
+
